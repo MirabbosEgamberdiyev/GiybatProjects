@@ -98,13 +98,13 @@
                     <div class="entrance_input__block">
                         <div class="entrance_input__box">
                             <label class="entrance_label">Telefon raqami / Email</label>
-                            <input type="text" id="username" class="entrance_input"/>
+                            <input type="text" id="username" class="entrance_input" placeholder="Email yoki Telefon raqami"/>
                             <span class="error-text" id="usernameErrorSpan">Required input</span>
                         </div>
                         <div class="entrance_input__box">
-                            <label class="entrance_label"> Parol</label>
-                            <input type="text" id="password" class="entrance_input"/>
-                            <span class="error-text">Required input</span>
+                            <label class="entrance_label">Parol</label>
+                            <input type="password" id="password" class="entrance_input" placeholder="Parol"/>
+                            <span class="error-text" id="passwordErrorSpan">Required input</span>
                         </div>
                     </div>
                     <div class="mb-1">
@@ -113,6 +113,7 @@
                     <div class="entrance_btn__box">
                         <button class="entrance_btn" onclick="login()">Kirish</button>
                     </div>
+                    <div id="errorText" style="color: red;"></div>
                 </div>
             </div>
         </section>

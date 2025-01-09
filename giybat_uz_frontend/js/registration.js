@@ -1,4 +1,4 @@
-document.getElementById("registrationForm").addEventListener("submit", (event) => {
+document.getElementById("registrationForm").addEventListener("submit", async (event) => {
     event.preventDefault();
 
     // Retrieve form values
@@ -15,8 +15,39 @@ document.getElementById("registrationForm").addEventListener("submit", (event) =
     if (!validatePasswordMatch(password, confirmPassword, errorTextTag)) return;
     if (!validatePhoneOrEmail(phoneEmail, errorTextTag)) return;
 
-    // If validation passes, proceed with form submission logic
-    console.log("Form submitted successfully!");
+    // Prepare request body
+    const body = {
+        name: name,
+        username: phoneEmail,
+        password: password,
+    };
+
+    try {
+        // Send POST request to the server
+        const response = await fetch("http://localhost:9090/auth/registration", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body),
+        });
+
+        // Handle the response
+        const data = await response.json();
+
+        if (response.ok) {
+            console.log("Form submitted successfully!");
+            alert(data.message || "Ro‘yxatdan o‘tish muvaffaqiyatli! Emailingizga tasdiqlash xati yuborildi.");
+            window.location.href = "http://localhost:63342/GiybatProjects/giybat_uz_frontend/login.html";
+        } else {
+            displayError(errorTextTag, data.message || "Xato yuz berdi. Iltimos, qaytadan urinib ko‘ring.");
+            alert(data.message || "Xato yuz berdi. Iltimos, qaytadan urinib ko‘ring.");
+
+        }
+    } catch (error) {
+        displayError(errorTextTag, "Server bilan bog‘lanishda xatolik yuz berdi.");
+        console.error("Error:", error);
+    }
 });
 
 function clearError(errorTextTag) {
@@ -38,8 +69,11 @@ function validatePasswordMatch(password, confirmPassword, errorTextTag) {
 }
 
 function validatePhoneOrEmail(value, errorTextTag) {
+    // Email regex: Matches a typical email format (local-part@domain)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const phoneRegex = /^998\d{9}$/; // Matches numbers like 998912345678
+
+    // Phone regex: Matches phone numbers starting with +998 and followed by 9 digits
+    const phoneRegex = /^\+998\d{9}$/; // Matches numbers like +998889996499
 
     if (emailRegex.test(value)) {
         console.log("Valid email detected");
