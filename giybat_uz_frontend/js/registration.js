@@ -1,28 +1,54 @@
-document.getElementById("registrationForm")
-    .addEventListener("submit", (event) => {
-        event.preventDefault();
+document.getElementById("registrationForm").addEventListener("submit", (event) => {
+    event.preventDefault();
 
-        const name = document.getElementById("name").value;
-        const phoneEmail = document.getElementById("phoneEmail").value;
-        const password = document.getElementById("password").value;
-        const confirmPassword = document.getElementById("confirmPassword").value;
-        const errorTextTag = document.getElementById("errorText");
+    // Retrieve form values
+    const name = document.getElementById("name").value.trim();
+    const phoneEmail = document.getElementById("phoneEmail").value.trim();
+    const password = document.getElementById("password").value.trim();
+    const confirmPassword = document.getElementById("confirmPassword").value.trim();
+    const errorTextTag = document.getElementById("errorText");
 
-    });
+    // Clear previous error messages
+    clearError(errorTextTag);
 
+    // Validate inputs
+    if (!validatePasswordMatch(password, confirmPassword, errorTextTag)) return;
+    if (!validatePhoneOrEmail(phoneEmail, errorTextTag)) return;
 
-function checkEmailOrPhone(value) {
-    // Regular expression for validating email
+    // If validation passes, proceed with form submission logic
+    console.log("Form submitted successfully!");
+});
+
+function clearError(errorTextTag) {
+    errorTextTag.textContent = "";
+    errorTextTag.style.display = "none";
+}
+
+function displayError(errorTextTag, message) {
+    errorTextTag.textContent = message;
+    errorTextTag.style.display = "block";
+}
+
+function validatePasswordMatch(password, confirmPassword, errorTextTag) {
+    if (password !== confirmPassword) {
+        displayError(errorTextTag, "Parollar mos emas!");
+        return false;
+    }
+    return true;
+}
+
+function validatePhoneOrEmail(value, errorTextTag) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    // Regular expression for validating phone numbers
-    // Adjust based on your requirements (e.g., country-specific formats)
-    const phoneRegex = /^998\d{9}$/; // 998 91 572 1213
+    const phoneRegex = /^998\d{9}$/; // Matches numbers like 998912345678
 
     if (emailRegex.test(value)) {
-        return "Email";
+        console.log("Valid email detected");
+        return true;
     } else if (phoneRegex.test(value)) {
-        return "Phone";
+        console.log("Valid phone number detected");
+        return true;
     } else {
-        return "Invalid";
+        displayError(errorTextTag, "Telefon raqami yoki email noto‘g‘ri kiritilgan.");
+        return false;
     }
 }
