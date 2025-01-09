@@ -1,0 +1,9 @@
+### GET request to example server
+GET https://examples.http-client.intellij.net/get
+    ?generated-in=IntelliJ IDEA
+
+###
+### POST request
+POST http://localhost:9090/post/create-post
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJyb2xlcyI6IlJPTEVfVVNFUiIsImlkIjoxLCJzdWIiOiJtaXJhYmJvc2VnYW1iZXJkaXlldjdAZ21haWwuY29tIiwiaWF0IjoxNzM2NDAxOTU1LCJleHAiOjE3MzY0ODgzNTV9.7SYsMAZxT1ZUABJ0u2mt46R_EfSDFWakrNxa_j0M6VBQyA2XYdmPlNYRgkxS09VVxX9so0xAAx-Tb8TgttV9Kw
