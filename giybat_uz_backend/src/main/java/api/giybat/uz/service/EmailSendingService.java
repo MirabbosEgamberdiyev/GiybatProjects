@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.logging.Logger;
+import org.springframework.scheduling.annotation.Async;
 
 @Service
 public class EmailSendingService {
@@ -31,9 +32,9 @@ public class EmailSendingService {
 
     private static final Logger logger = Logger.getLogger(EmailSendingService.class.getName());
 
+    @Async
     public void sendRegistrationEmail(String email, Integer profileId) {
         String subject = "Registration Confirmation";
-
         String body = loadEmailTemplate(profileId);
 
         if (!body.isEmpty()) {
@@ -65,7 +66,6 @@ public class EmailSendingService {
             helper.setTo(email);
             helper.setSubject(subject);
             helper.setText(body, true);  // 'true' ensures HTML content
-
             javaMailSender.send(msg);
         } catch (MessagingException e) {
             logger.severe("Error sending email to " + email + ": " + e.getMessage());
