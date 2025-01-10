@@ -5,10 +5,13 @@ import lombok.Data;
 
 @Data
 public class RegistrationDTO {
-    @NotBlank(message = "Name required")
+
+    @NotBlank
     private String name;
-    @NotBlank(message = "Username required")
+
+    @NotBlank
     private String username;
-    @NotBlank(message = "Password required")
+
+    @NotBlank
     private String password;
 }

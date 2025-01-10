@@ -4,6 +4,7 @@ import api.giybat.uz.dto.AuthDTO;
 import api.giybat.uz.dto.ProfileDTO;
 import api.giybat.uz.dto.RegistrationDTO;
 import api.giybat.uz.entity.ProfileEntity;
+import api.giybat.uz.enums.AppLanguage;
 import api.giybat.uz.enums.GeneralStatus;
 import api.giybat.uz.enums.ProfileRole;
 import api.giybat.uz.exps.AppBadException;
@@ -16,7 +17,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
-
 @Service
 public class AuthService {
 
@@ -38,8 +38,10 @@ public class AuthService {
     @Autowired
     private ProfileRoleRepository profileRoleRepository;
 
+    @Autowired
+    private ResourceBundleService resourceBundleService;
 
-    public ProfileEntity registration(RegistrationDTO dto) {
+    public ProfileEntity registration(RegistrationDTO dto, AppLanguage language) {
         // 1. Validation and username existence check
         Optional<ProfileEntity> optional = profileRepository.findByUsernameAndVisibleTrue(dto.getUsername());
         if (optional.isPresent()) {
@@ -48,7 +50,8 @@ public class AuthService {
                 profileRoleService.delete(profile.getId());
                 profileRepository.delete(profile);
             }
-            throw new AppBadException("Username already exists");
+            String errorMessage = resourceBundleService.getMessage("registration.username_exists", language);
+            throw new AppBadException(errorMessage);
         }
 
         // 2. Create new profile entity
@@ -61,43 +64,49 @@ public class AuthService {
         entity.setCreatedDate(LocalDateTime.now());
 
         // 3. Save and return
-        ProfileEntity save = profileRepository.save(entity);
+        ProfileEntity savedProfile = profileRepository.save(entity);
 
-        //Insert Roles
+        // Insert Roles
         profileRoleService.create(entity.getId(), ProfileRole.ROLE_USER);
 
-        // Send SMS to mail
+        // Send registration email
         emailSendingService.sendRegistrationEmail(entity.getUsername(), entity.getId());
 
-        return save;
+        return savedProfile;
     }
 
-    public String regVerification(Integer profileId) {
+    public String regVerification(Integer profileId, AppLanguage language) {
         ProfileEntity profile = profileService.getById(profileId);
         if (profile == null) {
-            throw new AppBadException("Profile not found.");
+            String errorMessage = resourceBundleService.getMessage("verification.profile_not_found", language);
+            throw new AppBadException(errorMessage);
         }
 
         if (profile.getStatus().equals(GeneralStatus.IN_REGISTRATION)) {
             profileRepository.changeStatus(profileId, GeneralStatus.ACTIVE);
-            return "Verification successful";
+            return resourceBundleService.getMessage("verification.success", language);
         }
 
-        throw new AppBadException("Verification failed. Current status: " + profile.getStatus());
+        String errorMessage = resourceBundleService.getMessage("verification.status_invalid", language);
+        throw new AppBadException(errorMessage);
     }
 
-    public ProfileDTO login(AuthDTO dto) {
-
+    public ProfileDTO login(AuthDTO dto, AppLanguage language) {
         Optional<ProfileEntity> optional = profileRepository.findByUsernameAndVisibleTrue(dto.getUsername());
         if (!optional.isPresent()) {
-            throw new AppBadException("Username or password is incorrect");
+            String errorMessage = resourceBundleService.getMessage("login.username_password_incorrect", language);
+            throw new AppBadException(errorMessage);
         }
+
         ProfileEntity profile = optional.get();
         if (!bCryptPasswordEncoder.matches(dto.getPassword(), profile.getPassword())) {
-            throw new AppBadException("Username or password is incorrect");
+            String errorMessage = resourceBundleService.getMessage("login.username_password_incorrect", language);
+            throw new AppBadException(errorMessage);
         }
+
         if (profile.getStatus() != GeneralStatus.ACTIVE) {
-            throw new AppBadException("Wrong Status");
+            String errorMessage = resourceBundleService.getMessage("login.status_invalid", language);
+            throw new AppBadException(errorMessage);
         }
 
         ProfileDTO response = new ProfileDTO();

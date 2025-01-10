@@ -41,8 +41,9 @@ document.getElementById("registrationForm").addEventListener("submit", async (ev
         console.log("Muvaffaqiyatli javob ma'lumotlari:", data);
 
         // Muvaffaqiyatli javobni qayta ishlash
-        alert(data.message || "Ro‘yxatdan o‘tish muvaffaqiyatli! Tasdiqlash xati yuborildi.");
-        window.location.href = "http://localhost:63342/GiybatProjects/giybat_uz_frontend/login.html";
+        // alert(data.message || "Ro‘yxatdan o‘tish muvaffaqiyatli! Tasdiqlash xati yuborildi.");
+        localStorage.setItem("registrationEmailMessage", data.message)
+        window.location.href = "./registration-email-confirm.html";
     } catch (error) {
         console.error("Ushlangan xatolik:", error);
 

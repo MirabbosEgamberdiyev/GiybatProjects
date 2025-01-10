@@ -5,11 +5,14 @@ import api.giybat.uz.dto.ProfileDTO;
 import api.giybat.uz.dto.RegistrationDTO;
 import api.giybat.uz.entity.ProfileEntity;
 import api.giybat.uz.entity.ResultAsync;
+import api.giybat.uz.enums.AppLanguage;
 import api.giybat.uz.exps.*;
 import api.giybat.uz.service.AuthService;
+import api.giybat.uz.service.ResourceBundleService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.MessageSource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,50 +36,113 @@ public class AuthController {
     @Value("classpath:templates/css/registration-success.css")
     private Resource cssTemplate;
 
-    @GetMapping("/registration/verification/{profileId}")
-    public ResponseEntity<String> regVerification(@PathVariable("profileId") Integer profileId) {
+    @Autowired
+    private ResourceBundleService resourceBundleService;
+
+    @PostMapping("/registration")
+    public ResponseEntity<ResultAsync<ProfileEntity>> registration(
+            @RequestHeader(value = "Accept-Language", defaultValue = "UZ") AppLanguage language,
+            @Valid @RequestBody RegistrationDTO dto) {
         try {
-            String result = authService.regVerification(profileId);
-            String message = result != null ? result : "Verification completed successfully";
+            ProfileEntity registration = authService.registration(dto, language);
+
+            if (registration != null) {
+                String successMessage = resourceBundleService.getMessage("registration.success", language);
+                return ResponseEntity.status(HttpStatus.CREATED)
+                        .body(ResultAsync.success(registration, successMessage));
+            }
+
+            String defaultSuccessMessage = resourceBundleService.getMessage("registration.success", language);
+            return ResponseEntity.ok(ResultAsync.success(null, defaultSuccessMessage));
+
+        } catch (AppBadException e) {
+            String errorMessage = e.getMessage() != null ? e.getMessage() :
+                    resourceBundleService.getMessage("registration.failed", language);
+            return ResponseEntity.badRequest().body(ResultAsync.failure(errorMessage));
+
+        } catch (UnauthorizedException e) {
+            String errorMessage = resourceBundleService.getMessage("registration.unauthorized", language);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResultAsync.failure(errorMessage));
+
+        } catch (ForbiddenException e) {
+            String errorMessage = resourceBundleService.getMessage("registration.forbidden", language);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ResultAsync.failure(errorMessage));
+
+        } catch (ConflictException e) {
+            String errorMessage = resourceBundleService.getMessage("registration.conflict", language);
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(ResultAsync.failure(errorMessage));
+
+        } catch (UnprocessableEntityException e) {
+            String errorMessage = resourceBundleService.getMessage("registration.unprocessable", language);
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(ResultAsync.failure(errorMessage));
+
+        } catch (TooManyRequestsException e) {
+            String errorMessage = resourceBundleService.getMessage("registration.too_many_requests", language);
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(ResultAsync.failure(errorMessage));
+
+        } catch (CustomServiceUnavailableException e) {
+            String errorMessage = resourceBundleService.getMessage("registration.service_unavailable", language);
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(ResultAsync.failure(errorMessage));
+
+        } catch (Exception e) {
+            String errorMessage = resourceBundleService.getMessage("error.unexpected", language);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ResultAsync.failure(errorMessage));
+        }
+    }
+
+
+    @GetMapping("/registration/verification/{profileId}")
+    public ResponseEntity<String> regVerification(
+            @PathVariable("profileId") Integer profileId,
+            @RequestHeader(value = "Accept-Language", defaultValue = "uz") AppLanguage language) {
+        try {
+            String result = authService.regVerification(profileId, language);
+            String message = result != null ? result :
+                    resourceBundleService.getMessage("verification.success", language);
 
             String html = loadHtmlTemplate(message);
             return ResponseEntity.ok().body(html);
 
         } catch (AppBadException e) {
-            String message = e.getMessage() != null ? e.getMessage() : "Verification failed";
+            String message = e.getMessage() != null ? e.getMessage() :
+                    resourceBundleService.getMessage("verification.failed", language);
             String html = loadHtmlTemplate(message);
             return ResponseEntity.badRequest().body(html);
 
         } catch (UnauthorizedException e) {
-            String html = loadHtmlTemplate("You are not authorized to verify this registration");
+            String message = resourceBundleService.getMessage("verification.unauthorized", language);
+            String html = loadHtmlTemplate(message);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(html);
 
         } catch (ForbiddenException e) {
-            String html = loadHtmlTemplate("You are not permitted to verify this registration");
+            String message = resourceBundleService.getMessage("verification.forbidden", language);
+            String html = loadHtmlTemplate(message);
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(html);
 
         } catch (NotFoundException e) {
-            String html = loadHtmlTemplate("Profile not found");
+            String message = resourceBundleService.getMessage("verification.not_found", language);
+            String html = loadHtmlTemplate(message);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(html);
 
         } catch (Exception e) {
-            String html = loadHtmlTemplate("An unexpected error occurred");
+            String message = resourceBundleService.getMessage("error.unexpected", language);
+            String html = loadHtmlTemplate(message);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(html);
         }
     }
 
     private String loadHtmlTemplate(String message) {
         try {
-            // Read the HTML template content
+            // HTML shablonini o‘qish
             String templateContent = Files.readString(emailTemplate.getFile().toPath(), StandardCharsets.UTF_8);
 
-            // Read the CSS content
+            // CSS shablonini o‘qish
             String cssContent = Files.readString(cssTemplate.getFile().toPath(), StandardCharsets.UTF_8);
 
-            // Embed the CSS into the HTML template's <head> section
+            // CSSni HTML shabloniga qo‘shish
             templateContent = templateContent.replace("<head>", "<head><style>" + cssContent + "</style>");
 
-            // Replace the placeholder with the dynamic message
+            // Dinamik xabarni joylashtirish
             templateContent = templateContent.replace("${message}", message);
 
             return templateContent;
@@ -85,99 +151,54 @@ public class AuthController {
         }
     }
 
-
-
-    @PostMapping("/registration")
-    public ResponseEntity<ResultAsync<ProfileEntity>> registration(@Valid @RequestBody RegistrationDTO dto) {
-        try {
-            ProfileEntity registration = authService.registration(dto);
-
-            if (registration != null) {
-                return ResponseEntity.status(HttpStatus.CREATED)
-                        .body(ResultAsync.success(registration, "Registration successful"));
-            }
-
-            return ResponseEntity.ok(ResultAsync.success(null, "Registration successful"));
-
-        } catch (AppBadException e) {
-            return ResponseEntity.badRequest()
-                    .body(ResultAsync.failure(e.getMessage() != null ? e.getMessage() : "Registration failed"));
-
-        } catch (UnauthorizedException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ResultAsync.failure("Invalid credentials provided"));
-
-        } catch (ForbiddenException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(ResultAsync.failure("You are not allowed to register"));
-
-        } catch (ConflictException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(ResultAsync.failure("User with this username already exists"));
-
-        } catch (UnprocessableEntityException e) {
-            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
-                    .body(ResultAsync.failure("Password must be at least 8 characters long"));
-
-        } catch (TooManyRequestsException e) {
-            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-                    .body(ResultAsync.failure("Too many registration attempts. Please try again later"));
-
-        } catch (CustomServiceUnavailableException e) {
-            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                    .body(ResultAsync.failure("Service is temporarily unavailable. Please try again later"));
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ResultAsync.failure("An unexpected error occurred"));
-        }
-    }
-
-
-
     @PostMapping("/login")
-    public ResponseEntity<ResultAsync<ProfileDTO>> login(@Valid @RequestBody AuthDTO dto) {
+    public ResponseEntity<ResultAsync<ProfileDTO>> login(
+            @RequestHeader(value = "Accept-Language", defaultValue = "uz") AppLanguage language,
+            @Valid @RequestBody AuthDTO dto) {
         try {
-            ProfileDTO profile = authService.login(dto);
+            ProfileDTO login = authService.login(dto, language);
 
-            if (profile != null) {
-                return ResponseEntity.ok(ResultAsync.success(profile, "Login successful"));
+            if (login != null) {
+                String successMessage = resourceBundleService.getMessage("login.success", language);
+                return ResponseEntity.status(HttpStatus.OK)
+                        .body(ResultAsync.success(login, successMessage));
             }
 
-            return ResponseEntity.ok(ResultAsync.success(null, "Login successful"));
+            String defaultSuccessMessage = resourceBundleService.getMessage("login.success", language);
+            return ResponseEntity.ok(ResultAsync.success(null, defaultSuccessMessage));
 
         } catch (AppBadException e) {
-            return ResponseEntity.badRequest()
-                    .body(ResultAsync.failure(e.getMessage() != null ? e.getMessage() : "Login failed"));
+            String errorMessage = e.getMessage() != null ? e.getMessage() :
+                    resourceBundleService.getMessage("login.failed", language);
+            return ResponseEntity.badRequest().body(ResultAsync.failure(errorMessage));
 
         } catch (UnauthorizedException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ResultAsync.failure("Invalid credentials provided"));
+            String errorMessage = resourceBundleService.getMessage("login.unauthorized", language);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ResultAsync.failure(errorMessage));
 
         } catch (ForbiddenException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(ResultAsync.failure("You are not authorized to log in"));
+            String errorMessage = resourceBundleService.getMessage("login.forbidden", language);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ResultAsync.failure(errorMessage));
 
         } catch (ConflictException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(ResultAsync.failure("Conflict during login attempt"));
+            String errorMessage = resourceBundleService.getMessage("login.conflict", language);
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(ResultAsync.failure(errorMessage));
 
         } catch (UnprocessableEntityException e) {
-            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
-                    .body(ResultAsync.failure("Login failed due to invalid data"));
+            String errorMessage = resourceBundleService.getMessage("logi n.unprocessable", language);
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(ResultAsync.failure(errorMessage));
 
         } catch (TooManyRequestsException e) {
-            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-                    .body(ResultAsync.failure("Too many login attempts. Please try again later"));
+            String errorMessage = resourceBundleService.getMessage("login.too_many_requests", language);
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(ResultAsync.failure(errorMessage));
 
         } catch (CustomServiceUnavailableException e) {
-            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-                    .body(ResultAsync.failure("Service is temporarily unavailable. Please try again later"));
+            String errorMessage = resourceBundleService.getMessage("login.service_unavailable", language);
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(ResultAsync.failure(errorMessage));
 
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ResultAsync.failure("An unexpected error occurred"));
+            String errorMessage = resourceBundleService.getMessage("error.unexpected", language);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ResultAsync.failure(errorMessage));
         }
     }
-
 }
