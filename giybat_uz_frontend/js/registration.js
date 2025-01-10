@@ -1,21 +1,21 @@
 document.getElementById("registrationForm").addEventListener("submit", async (event) => {
     event.preventDefault();
 
-    // Retrieve form values
+    // Form qiymatlarini olish
     const name = document.getElementById("name").value.trim();
     const phoneEmail = document.getElementById("phoneEmail").value.trim();
     const password = document.getElementById("password").value.trim();
     const confirmPassword = document.getElementById("confirmPassword").value.trim();
     const errorTextTag = document.getElementById("errorText");
 
-    // Clear previous error messages
+    // Oldingi xatoliklarni tozalash
     clearError(errorTextTag);
 
-    // Validate inputs
+    // Kiritilgan ma'lumotlarni tekshirish
     if (!validatePasswordMatch(password, confirmPassword, errorTextTag)) return;
     if (!validatePhoneOrEmail(phoneEmail, errorTextTag)) return;
 
-    // Prepare request body
+    // So‘rov uchun tayyor body
     const body = {
         name: name,
         username: phoneEmail,
@@ -23,7 +23,6 @@ document.getElementById("registrationForm").addEventListener("submit", async (ev
     };
 
     try {
-        // Send POST request to the server
         const response = await fetch("http://localhost:9090/auth/registration", {
             method: 'POST',
             headers: {
@@ -32,34 +31,46 @@ document.getElementById("registrationForm").addEventListener("submit", async (ev
             body: JSON.stringify(body),
         });
 
-        // Handle the response
-        const data = await response.json();
-
-        if (response.ok) {
-            console.log("Form submitted successfully!");
-            alert(data.message || "Ro‘yxatdan o‘tish muvaffaqiyatli! Emailingizga tasdiqlash xati yuborildi.");
-            window.location.href = "http://localhost:63342/GiybatProjects/giybat_uz_frontend/login.html";
-        } else {
-            displayError(errorTextTag, data.message || "Xato yuz berdi. Iltimos, qaytadan urinib ko‘ring.");
-            alert(data.message || "Xato yuz berdi. Iltimos, qaytadan urinib ko‘ring.");
-
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error("Xatolik ma'lumotlari:", errorData);
+            throw new Error(errorData.message || "Kutilmagan xatolik yuz berdi");
         }
+
+        const data = await response.json(); // Muvaffaqiyatli javobni JSON formatida o‘qish
+        console.log("Muvaffaqiyatli javob ma'lumotlari:", data);
+
+        // Muvaffaqiyatli javobni qayta ishlash
+        alert(data.message || "Ro‘yxatdan o‘tish muvaffaqiyatli! Tasdiqlash xati yuborildi.");
+        window.location.href = "http://localhost:63342/GiybatProjects/giybat_uz_frontend/login.html";
     } catch (error) {
-        displayError(errorTextTag, "Server bilan bog‘lanishda xatolik yuz berdi.");
-        console.error("Error:", error);
+        console.error("Ushlangan xatolik:", error);
+
+        if (error.message.includes("Failed to fetch")) {
+            // Tarmoq yoki server bilan bog‘liq xatolik
+            displayError(errorTextTag, "Server bilan bog‘lanishda muammo yuz berdi. Iltimos, qaytadan urinib ko‘ring.");
+        } else {
+            // API yoki validatsiya xatoligi
+            displayError(errorTextTag, error.message || "Kutilmagan xatolik yuz berdi");
+        }
+
+        alert(error.message || "Xato yuz berdi. Iltimos, qaytadan urinib ko‘ring.");
     }
 });
 
+// Xatolik xabarlarini tozalash funksiyasi
 function clearError(errorTextTag) {
     errorTextTag.textContent = "";
     errorTextTag.style.display = "none";
 }
 
+// Xatolik xabarlarini chiqarish funksiyasi
 function displayError(errorTextTag, message) {
     errorTextTag.textContent = message;
     errorTextTag.style.display = "block";
 }
 
+// Parollarni tekshirish funksiyasi
 function validatePasswordMatch(password, confirmPassword, errorTextTag) {
     if (password !== confirmPassword) {
         displayError(errorTextTag, "Parollar mos emas!");
@@ -68,18 +79,19 @@ function validatePasswordMatch(password, confirmPassword, errorTextTag) {
     return true;
 }
 
+// Telefon raqami yoki emailni tekshirish funksiyasi
 function validatePhoneOrEmail(value, errorTextTag) {
-    // Email regex: Matches a typical email format (local-part@domain)
+    // Email uchun regex: Oddiy email formatini tekshiradi (local-part@domain)
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    // Phone regex: Matches phone numbers starting with +998 and followed by 9 digits
-    const phoneRegex = /^\+998\d{9}$/; // Matches numbers like +998889996499
+    // Telefon raqami uchun regex: +998 bilan boshlanadigan va 9 ta raqamni o‘z ichiga oladi
+    const phoneRegex = /^\+998\d{9}$/; // Masalan, +998889996499
 
     if (emailRegex.test(value)) {
-        console.log("Valid email detected");
+        console.log("Yaroqli email topildi");
         return true;
     } else if (phoneRegex.test(value)) {
-        console.log("Valid phone number detected");
+        console.log("Yaroqli telefon raqami topildi");
         return true;
     } else {
         displayError(errorTextTag, "Telefon raqami yoki email noto‘g‘ri kiritilgan.");
