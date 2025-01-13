@@ -41,8 +41,11 @@ public class AuthController {
 
     @PostMapping("/registration")
     public ResponseEntity<ResultAsync<ProfileEntity>> registration(
-            @RequestHeader(value = "Accept-Language", defaultValue = "UZ") AppLanguage language,
+            @RequestHeader(value = "Accept-Language", defaultValue = "UZ") String languageCode,
             @Valid @RequestBody RegistrationDTO dto) {
+
+        AppLanguage language = AppLanguage.fromString(languageCode);
+
         try {
             ProfileEntity registration = authService.registration(dto, language);
 
