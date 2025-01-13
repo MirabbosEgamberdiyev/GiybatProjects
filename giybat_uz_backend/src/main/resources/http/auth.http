@@ -1,6 +1,7 @@
 ###
 POST http://localhost:9090/auth/registration
 Content-Type: application/json
+Accept-Language: EN
 
 {
   "name": "Mirabbos",
@@ -18,4 +19,5 @@ Accept-Language: RU
 }
 
 ### Registration Verification
-GET http://localhost:9090/auth/registration/verification/1
+GET http://localhost:9090/auth/registration/verification/3
+Accept-Language: RU

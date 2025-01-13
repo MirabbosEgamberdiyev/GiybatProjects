@@ -1,6 +1,7 @@
 ###
 POST http://localhost:9090/auth/registration
 Content-Type: application/json
+Accept-Language: EN
 
 {
   "name": "Mirabbos",
@@ -11,11 +12,12 @@ Content-Type: application/json
 ###
 POST http://localhost:9090/auth/login
 Content-Type: application/json
+Accept-Language: RU
 
 {
-  "username": "mirabbosegamberdiyev7@gmail.com",
   "password": "Mirabbos2001"
 }
 
 ### Registration Verification
-GET http://localhost:9090/auth/registration/verification/1
+GET http://localhost:9090/auth/registration/verification/3
+Accept-Language: RU

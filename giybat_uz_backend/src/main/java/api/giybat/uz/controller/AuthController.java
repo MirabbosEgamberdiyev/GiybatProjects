@@ -94,7 +94,7 @@ public class AuthController {
     @GetMapping("/registration/verification/{profileId}")
     public ResponseEntity<String> regVerification(
             @PathVariable("profileId") Integer profileId,
-            @RequestHeader(value = "Accept-Language", defaultValue = "uz") AppLanguage language) {
+            @RequestHeader(value = "Accept-Language", defaultValue = "UZ") AppLanguage language) {
         try {
             String result = authService.regVerification(profileId, language);
             String message = result != null ? result :
@@ -153,7 +153,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<ResultAsync<ProfileDTO>> login(
-            @RequestHeader(value = "Accept-Language", defaultValue = "uz") AppLanguage language,
+            @RequestHeader(value = "Accept-Language", defaultValue = "UZ") AppLanguage language,
             @Valid @RequestBody AuthDTO dto) {
         try {
             ProfileDTO login = authService.login(dto, language);
