@@ -12,7 +12,6 @@ import api.giybat.uz.service.ResourceBundleService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.MessageSource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -188,7 +187,7 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(ResultAsync.failure(errorMessage));
 
         } catch (UnprocessableEntityException e) {
-            String errorMessage = resourceBundleService.getMessage("logi n.unprocessable", language);
+            String errorMessage = resourceBundleService.getMessage("login.unprocessable", language);
             return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(ResultAsync.failure(errorMessage));
 
         } catch (TooManyRequestsException e) {

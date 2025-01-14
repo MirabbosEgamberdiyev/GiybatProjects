@@ -51,7 +51,4 @@ public class ProfileEntity {
     @Schema(description = "Timestamp when the profile was created", example = "2025-01-01T10:00:00")
     private LocalDateTime createdDate;
 
-//    @OneToMany(mappedBy = "profile", cascade = CascadeType.REMOVE, orphanRemoval = true)
-//    private List<ProfileRolesEntity> profileRoles;
-
 }
